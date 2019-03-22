@@ -141,7 +141,7 @@ def show_diff(operations, tpl):
         elif operations[index]['operation'] == 'DELETE':
             if (index != op_size - 1) and (operations[index + 1]['operation'] == 'INSERT'):
                 # 当前删除操作不是最后一个操作，并且下一个操作是插入操作，说明某个内容被替换了
-                if operations[index]['text'].startswith('#') and operations[index]['text'].endswith('#'):
+                if operations[index]['text'].startswith('#') and operations[index]['text'].endswith('#') and operations[index]['text'].count('#') == 2:
                     # 变量正确匹配,模版中的变量标绿
                     check_tpl = check_tpl.replace(operations[index]['text'],
                                                   (green + operations[index]['text'] + tail))
@@ -167,7 +167,7 @@ def show_diff(operations, tpl):
         elif operations[index]['operation'] == 'INSERT':
             if (index != 0) and (operations[index - 1]['operation'] == 'DELETE'):
                 # 当前插入操作不是第一个操作，并且前一个操作是删除操作，说明内容被替换了
-                if operations[index - 1]['text'].startswith('#') and operations[index - 1]['text'].endswith('#'):
+                if operations[index - 1]['text'].startswith('#') and operations[index - 1]['text'].endswith('#') and operations[index - 1]['text'].count('#') == 2:
                     # 变量被正确替换，替换的内容标绿
                     t = (green + operations[index]['text'] + tail)
                     check_text += t
