@@ -142,7 +142,7 @@ def show_diff(operations, tpl):
 
     op_size = len(operations)
 
-    cur = 0
+    cur = 15
 
     for index in range(op_size):
         if operations[index]['operation'] == 'EQUAL':
@@ -175,6 +175,7 @@ def show_diff(operations, tpl):
                 # 当前删除操作是最后一个，或者下一个操作不是删除操作，说明某个内容单纯被删除了
                 check_tpl = check_tpl.replace(operations[index]['text'],
                                               yellow + operations[index]['text'] + tail)
+                print('hh', html_check_tpl[:cur], html_check_tpl[cur:])
                 html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
                                                         html_yellow.format(operations[index]['text']))
                 description.append('模版中的"{}"被删除了,在短信文本中找不到'.format(operations[index]['text']))
