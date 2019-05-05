@@ -3,7 +3,7 @@ import difflib
 import requests
 
 
-def get_tpls_pages(wksid, subid):
+def get_tpls_pages(wksid, subid, url):
     """
 
     :param wksid: wk session id
@@ -18,20 +18,13 @@ def get_tpls_pages(wksid, subid):
         'pageSize': 100,
         'subAccountId': subid
     }
-    r = requests.post('https://www.yunpian.com/api/domestic/template/search',
+    r = requests.post(url=url,
                       cookies=cookie,
                       json=data)
     return json.loads(r.text)['data']['pagin']['pageCount']
 
 
-def get_all_tpls(wksid, subid, pages):
-    """
-    获取子账号下所有模版
-    :param wksid: wk session id
-    :param subid: 子账号
-    :param pages: 模版页数
-    :return:
-    """
+def get_tpls(wksid, subid, url, pages):
     tpls = []
     for i in range(1, pages + 1):
         cookie = {
@@ -42,7 +35,7 @@ def get_all_tpls(wksid, subid, pages):
             'pageSize': 100,
             'subAccountId': subid
         }
-        r = requests.post('https://www.yunpian.com/api/domestic/template/search',
+        r = requests.post(url=url,
                           cookies=cookie,
                           json=data)
         tpl_list = json.loads(r.text)['data']['records']
@@ -53,6 +46,21 @@ def get_all_tpls(wksid, subid, pages):
                     'tpl_content': tpl['content']
                 })
     return tpls
+
+
+def get_all_tpls(wksid, subid):
+    """
+    获取子账号下所有模版
+    :param wksid: wk session id
+    :param subid: 子账号
+    :param pages: 模版页数
+    :return:
+    """
+    dome_pages = get_tpls_pages(wksid, subid, 'https://www.yunpian.com/api/domestic/template/search')
+    intel_pages = get_tpls_pages(wksid, subid, 'https://www.yunpian.com/api/international/template/search')
+    dome_tpls = get_tpls(wksid, subid, 'https://www.yunpian.com/api/domestic/template/search', dome_pages)
+    intel_tpls = get_tpls(wksid, subid, 'https://www.yunpian.com/api/international/template/search', intel_pages)
+    return dome_tpls, intel_tpls
 
 
 def match_best_tpl(tpls, text):
@@ -111,8 +119,8 @@ def show_diff(operations, tpl):
     check_text = ''
     description = []
 
-    html_check_tpl = '<div>比较差异后的模版为: {}</div>'.format(tpl)
-    html_check_text = '比较差异后的文本为: '
+    html_check_tpl = '<div>比较差异后的模版为:{}</div>'.format(tpl)
+    html_check_text = '比较差异后的文本为:'
 
     # 错误匹配为红色
     red = "\033[31m"
@@ -134,40 +142,48 @@ def show_diff(operations, tpl):
 
     op_size = len(operations)
 
+    cur = 0
+
     for index in range(op_size):
         if operations[index]['operation'] == 'EQUAL':
             check_text += operations[index]['text']
             html_check_text += operations[index]['text']
+            cur += len(operations[index]['text'])
         elif operations[index]['operation'] == 'DELETE':
             if (index != op_size - 1) and (operations[index + 1]['operation'] == 'INSERT'):
                 # 当前删除操作不是最后一个操作，并且下一个操作是插入操作，说明某个内容被替换了
-                if operations[index]['text'].startswith('#') and operations[index]['text'].endswith('#') and operations[index]['text'].count('#') == 2:
+                if operations[index]['text'].startswith('#') and operations[index]['text'].endswith('#') and \
+                        operations[index]['text'].count('#') == 2:
                     # 变量正确匹配,模版中的变量标绿
                     check_tpl = check_tpl.replace(operations[index]['text'],
                                                   (green + operations[index]['text'] + tail))
-                    html_check_tpl = html_check_tpl.replace(operations[index]['text'],
+                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
                                                             html_green.format(operations[index]['text']))
                     description.append('模版中的变量"{}",正确匹配了"{}"'.format(operations[index]['text'],
                                                                      operations[index + 1]['text']))
+                    cur += (31 + len(operations[index]['text']))
                 else:
                     # 模版中的某个内容被错误匹配,模版中的内容标红
                     check_tpl = check_tpl.replace(operations[index]['text'],
                                                   red + operations[index]['text'] + tail)
-                    html_check_tpl = html_check_tpl.replace(operations[index]['text'],
+                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
                                                             html_red.format(operations[index]['text']))
                     description.append('模版中的"{}",错误匹配了"{}"'.format(operations[index]['text'],
                                                                    operations[index + 1]['text']))
+                    cur += (29 + len(operations[index]['text']))
             else:
                 # 当前删除操作是最后一个，或者下一个操作不是删除操作，说明某个内容单纯被删除了
                 check_tpl = check_tpl.replace(operations[index]['text'],
                                               yellow + operations[index]['text'] + tail)
-                html_check_tpl = html_check_tpl.replace(operations[index]['text'],
+                html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
                                                         html_yellow.format(operations[index]['text']))
                 description.append('模版中的"{}"被删除了,在短信文本中找不到'.format(operations[index]['text']))
+                cur += (32 + len(operations[index]['text']))
         elif operations[index]['operation'] == 'INSERT':
             if (index != 0) and (operations[index - 1]['operation'] == 'DELETE'):
                 # 当前插入操作不是第一个操作，并且前一个操作是删除操作，说明内容被替换了
-                if operations[index - 1]['text'].startswith('#') and operations[index - 1]['text'].endswith('#') and operations[index - 1]['text'].count('#') == 2:
+                if operations[index - 1]['text'].startswith('#') and operations[index - 1]['text'].endswith('#') and \
+                        operations[index - 1]['text'].count('#') == 2:
                     # 变量被正确替换，替换的内容标绿
                     t = (green + operations[index]['text'] + tail)
                     check_text += t
@@ -183,7 +199,7 @@ def show_diff(operations, tpl):
                 html_check_text += html_blue.format(operations[index]['text'])
                 description.append('短信文本与模版相比多了"{}"内容'.format(operations[index]['text']))
     html_check_text = '<div>' + html_check_text + '</div>'
-    html_description = '<div>' + '比较差异的描述内容为: ' + ';'.join(description) + '</div>'
+    html_description = '<div>' + '比较差异的描述内容为: <br><br>' + '<br>'.join(description) + '</div>'
     return check_tpl, check_text, ';'.join(description), html_check_tpl, html_check_text, html_description
 
 
@@ -196,13 +212,22 @@ def run(wksid, subid, msg_text):
     :return:
     """
     # 1.获取子账号下的模版页数，用来获取所有的模版
-    page_num = get_tpls_pages(wksid, subid)
+    # pass
 
     # 2.获取子账号下的所有模版
-    all_tpls_list = get_all_tpls(wksid, subid, page_num)
+    dome_tpls, intel_tpls = get_all_tpls(wksid, subid)
 
     # 3.根据短信文本，匹配最相似的模版
-    best_tpl, best_tpl_id = match_best_tpl(all_tpls_list, msg_text)
+    best_tpl, best_tpl_id = match_best_tpl(dome_tpls+intel_tpls, msg_text)
+
+    print(dome_tpls)
+
+    for d in dome_tpls:
+        if best_tpl_id == d['tpl_id']:
+            best_tpl_type = '国内模版'
+            break
+        else:
+            best_tpl_type = '国际模版'
 
     # 4.获取最匹配的模版和短信内容之间的转换操作
     f, data = get_match_operations(wksid, subid, best_tpl, msg_text)
@@ -224,13 +249,15 @@ def run(wksid, subid, msg_text):
 
         print('比较差异的描述内容为: {}'.format(output_des))
 
-        return [best_tpl_id, best_tpl, msg_text, output_html_tpl, output_html_text, output_html_des]
+        return [best_tpl_id, best_tpl, msg_text, output_html_tpl, output_html_text, output_html_des], best_tpl_type
     elif f == 0:
         print('短信文本和模版匹配正确，没有错误')
-        return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>', '<div>比较差异的描述内容为: 短信文本和模版匹配正确，没有错误</div>']
+        return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
+                '<div>比较差异的描述内容为: 短信文本和模版匹配正确，没有错误</div>'], ''
     else:
         print(data)
-        return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>', '<div>比较差异的描述内容为: {}</div>'.format(data)]
+        return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
+                '<div>比较差异的描述内容为: {}</div>'.format(data)], ''
 
 
 if __name__ == '__main__':
