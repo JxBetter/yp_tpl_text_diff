@@ -157,8 +157,11 @@ def show_diff(operations, tpl):
                     # 变量正确匹配,模版中的变量标绿
                     check_tpl = check_tpl.replace(operations[index]['text'],
                                                   (green + operations[index]['text'] + tail))
-                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
-                                                            html_green.format(operations[index]['text']))
+                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[
+                                                            cur:cur + len(operations[index]['text'])].replace(
+                        operations[index]['text'],
+                        html_green.format(operations[index]['text'])) + html_check_tpl[
+                                                                        cur + len(operations[index]['text']):]
                     description.append('模版中的变量"{}",正确匹配了"{}"'.format(operations[index]['text'],
                                                                      operations[index + 1]['text']))
                     cur += (31 + len(operations[index]['text']))
@@ -166,8 +169,11 @@ def show_diff(operations, tpl):
                     # 模版中的某个内容被错误匹配,模版中的内容标红
                     check_tpl = check_tpl.replace(operations[index]['text'],
                                                   red + operations[index]['text'] + tail)
-                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
-                                                            html_red.format(operations[index]['text']))
+                    html_check_tpl = html_check_tpl[:cur] + html_check_tpl[
+                                                            cur:cur + len(operations[index]['text'])].replace(
+                        operations[index]['text'],
+                        html_red.format(
+                            operations[index]['text'])) + html_check_tpl[cur + len(operations[index]['text']):]
                     description.append('模版中的"{}",错误匹配了"{}"'.format(operations[index]['text'],
                                                                    operations[index + 1]['text']))
                     cur += (29 + len(operations[index]['text']))
@@ -175,9 +181,11 @@ def show_diff(operations, tpl):
                 # 当前删除操作是最后一个，或者下一个操作不是删除操作，说明某个内容单纯被删除了
                 check_tpl = check_tpl.replace(operations[index]['text'],
                                               yellow + operations[index]['text'] + tail)
-                print('hh', html_check_tpl[:cur], html_check_tpl[cur:])
-                html_check_tpl = html_check_tpl[:cur] + html_check_tpl[cur:].replace(operations[index]['text'],
-                                                        html_yellow.format(operations[index]['text']))
+                html_check_tpl = html_check_tpl[:cur] + html_check_tpl[
+                                                        cur:cur + len(operations[index]['text'])].replace(
+                    operations[index]['text'],
+                    html_yellow.format(
+                        operations[index]['text'])) + html_check_tpl[cur + len(operations[index]['text']):]
                 description.append('模版中的"{}"被删除了,在短信文本中找不到'.format(operations[index]['text']))
                 cur += (32 + len(operations[index]['text']))
         elif operations[index]['operation'] == 'INSERT':
@@ -219,7 +227,7 @@ def run(wksid, subid, msg_text):
     dome_tpls, intel_tpls = get_all_tpls(wksid, subid)
 
     # 3.根据短信文本，匹配最相似的模版
-    best_tpl, best_tpl_id = match_best_tpl(dome_tpls+intel_tpls, msg_text)
+    best_tpl, best_tpl_id = match_best_tpl(dome_tpls + intel_tpls, msg_text)
 
     print(dome_tpls)
 
