@@ -231,12 +231,12 @@ def run(wksid, subid, msg_text):
 
     print(dome_tpls)
 
+    best_tpl_type = '国际模版'
+
     for d in dome_tpls:
         if best_tpl_id == d['tpl_id']:
             best_tpl_type = '国内模版'
             break
-        else:
-            best_tpl_type = '国际模版'
 
     # 4.获取最匹配的模版和短信内容之间的转换操作
     f, data = get_match_operations(wksid, subid, best_tpl, msg_text)
