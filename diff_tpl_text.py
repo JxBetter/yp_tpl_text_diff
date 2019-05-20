@@ -222,51 +222,60 @@ def run(wksid, subid, msg_text):
     """
     # 1.获取子账号下的模版页数，用来获取所有的模版
     # pass
+    success = False
 
     # 2.获取子账号下的所有模版
     dome_tpls, intel_tpls = get_all_tpls(wksid, subid)
 
-    # 3.根据短信文本，匹配最相似的模版
-    best_tpl, best_tpl_id = match_best_tpl(dome_tpls + intel_tpls, msg_text)
-
-    print(dome_tpls)
-
-    best_tpl_type = '国际模版'
-
-    for d in dome_tpls:
-        if best_tpl_id == d['tpl_id']:
-            best_tpl_type = '国内模版'
+    for _tpl in dome_tpls+intel_tpls:
+        f, d = get_match_operations(wksid, subid, _tpl['tpl_content'], msg_text)
+        if f == 0:
+            success = True
             break
 
-    # 4.获取最匹配的模版和短信内容之间的转换操作
-    f, data = get_match_operations(wksid, subid, best_tpl, msg_text)
+    if success is False:
+        # 3.根据短信文本，匹配最相似的模版
+        best_tpl, best_tpl_id = match_best_tpl(dome_tpls + intel_tpls, msg_text)
 
-    if f == -1:
-        operations_list = data
-        # 5.根据转换操作输出模版和短信内容之间的差异
-        output_tpl, output_text, output_des, output_html_tpl, output_html_text, output_html_des = show_diff(
-            operations_list, best_tpl)
-        print('匹配的最佳模版的id为: {}'.format(best_tpl_id))
+        best_tpl_type = '国际模版'
 
-        print('匹配的最佳模版为: {}'.format(best_tpl))
+        for d in dome_tpls:
+            if best_tpl_id == d['tpl_id']:
+                best_tpl_type = '国内模版'
+                break
 
-        print('输入的短信文本为: {}'.format(msg_text))
+        # 4.获取最匹配的模版和短信内容之间的转换操作
+        f, data = get_match_operations(wksid, subid, best_tpl, msg_text)
 
-        print('比较差异后的模版为: {}'.format(output_tpl))
+        if f == -1:
+            operations_list = data
+            # 5.根据转换操作输出模版和短信内容之间的差异
+            output_tpl, output_text, output_des, output_html_tpl, output_html_text, output_html_des = show_diff(
+                operations_list, best_tpl)
+            print('匹配的最佳模版的id为: {}'.format(best_tpl_id))
 
-        print('比较差异后的文本为: {}'.format(output_text))
+            print('匹配的最佳模版为: {}'.format(best_tpl))
 
-        print('比较差异的描述内容为: {}'.format(output_des))
+            print('输入的短信文本为: {}'.format(msg_text))
 
-        return [best_tpl_id, best_tpl, msg_text, output_html_tpl, output_html_text, output_html_des], best_tpl_type
-    elif f == 0:
-        print('短信文本和模版匹配正确，没有错误')
-        return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
-                '<div>比较差异的描述内容为: 短信文本和模版匹配正确，没有错误</div>'], ''
+            print('比较差异后的模版为: {}'.format(output_tpl))
+
+            print('比较差异后的文本为: {}'.format(output_text))
+
+            print('比较差异的描述内容为: {}'.format(output_des))
+
+            return [best_tpl_id, best_tpl, msg_text, output_html_tpl, output_html_text, output_html_des], best_tpl_type
+        elif f == 0:
+            print('短信文本和模版匹配正确，没有错误')
+            return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
+                    '<div>比较差异的描述内容为: 短信文本和模版匹配正确，没有错误</div>'], ''
+        else:
+            print(data)
+            return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
+                    '<div>比较差异的描述内容为: {}</div>'.format(data)], ''
     else:
-        print(data)
         return ['', '', '', '<div>比较差异后的模版为: </div>', '<div>比较差异后的文本为: </div>',
-                '<div>比较差异的描述内容为: {}</div>'.format(data)], ''
+                    '<div>比较差异的描述内容为: 短信文本和模版匹配正确，没有错误</div>'], ''
 
 
 if __name__ == '__main__':
