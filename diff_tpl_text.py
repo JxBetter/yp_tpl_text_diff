@@ -82,7 +82,7 @@ def match_best_tpl(tpls, text):
     return best_tpl, best_tpl_id
 
 
-def get_match_operations(wksid, subid, tpl, text):
+def get_match_operations(wksid, subid, tpl, text, dome_or_inter):
     """
     获取匹配的操作内容
     :param wksid: wk session id
@@ -99,7 +99,10 @@ def get_match_operations(wksid, subid, tpl, text):
         'tplContent': tpl,
         'testContent': text
     }
-    r = requests.post('https://www.yunpian.com/api/domestic/template/test', json=data, cookies=cookie)
+    if dome_or_inter == '国内':
+        r = requests.post('https://www.yunpian.com/api/domestic/template/test', json=data, cookies=cookie)
+    else:
+        r = requests.post('https://www.yunpian.com/api/international/template/test', json=data, cookies=cookie)
     if json.loads(r.text)['code'] == -1:
         return -1, json.loads(json.loads(r.text)['data'])
     elif json.loads(r.text)['code'] == 0:
@@ -212,7 +215,7 @@ def show_diff(operations, tpl):
     return check_tpl, check_text, ';'.join(description), html_check_tpl, html_check_text, html_description
 
 
-def run(wksid, subid, msg_text):
+def run(wksid, subid, msg_text, dome_or_inter):
     """
     终端打印，返回html渲染文本
     :param wksid:
@@ -227,25 +230,37 @@ def run(wksid, subid, msg_text):
     # 2.获取子账号下的所有模版
     dome_tpls, intel_tpls = get_all_tpls(wksid, subid)
 
-    for _tpl in dome_tpls+intel_tpls:
-        f, d = get_match_operations(wksid, subid, _tpl['tpl_content'], msg_text)
-        if f == 0:
-            success = True
-            break
+    if dome_or_inter == '国内':
+        for _tpl in dome_tpls+intel_tpls:
+            f, d = get_match_operations(wksid, subid, _tpl['tpl_content'], msg_text, dome_or_inter)
+            if f == 0:
+                success = True
+                break
+    else:
+        for _tpl in intel_tpls:
+            f, d = get_match_operations(wksid, subid, _tpl['tpl_content'], msg_text, dome_or_inter)
+            if f == 0:
+                success = True
+                break
 
     if success is False:
         # 3.根据短信文本，匹配最相似的模版
-        best_tpl, best_tpl_id = match_best_tpl(dome_tpls + intel_tpls, msg_text)
+        if dome_or_inter == '国内':
+            best_tpl, best_tpl_id = match_best_tpl(dome_tpls + intel_tpls, msg_text)
 
-        best_tpl_type = '国际模版'
+            best_tpl_type = '国际模版'
 
-        for d in dome_tpls:
-            if best_tpl_id == d['tpl_id']:
-                best_tpl_type = '国内模版'
-                break
+            for d in dome_tpls:
+                if best_tpl_id == d['tpl_id']:
+                    best_tpl_type = '国内模版'
+                    break
+        else:
+            best_tpl, best_tpl_id = match_best_tpl(intel_tpls, msg_text)
+
+            best_tpl_type = '国际模版'
 
         # 4.获取最匹配的模版和短信内容之间的转换操作
-        f, data = get_match_operations(wksid, subid, best_tpl, msg_text)
+        f, data = get_match_operations(wksid, subid, best_tpl, msg_text, dome_or_inter)
 
         if f == -1:
             operations_list = data

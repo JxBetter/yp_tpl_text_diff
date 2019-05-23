@@ -6,10 +6,14 @@
 </head>
 <body>
     <form action="/" method="post">
-      <p>wksid: <br><input type="text" name="wksid" size="45"/></p>
-      <p>用户子id: <br><input type="text" name="subid" size="25" /></p>
+        <select name="select">
+        <option value="国内" selected="selected">国内</option>
+        <option value="国际">国际</option>
+        </select>
+        <p>wksid: <br><input type="text" name="wksid" size="45"/></p>
+        <p>用户子id: <br><input type="text" name="subid" size="25" /></p>
         <p>短信文本: <br><textarea name="text" rows="10" cols="50"></textarea></p>
-      <button type="submit" style="font-size: 16px">开始匹配</button>
+        <button type="submit" style="font-size: 16px">开始匹配</button>
     </form>
 </body>
 </html>

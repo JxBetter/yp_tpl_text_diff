@@ -10,7 +10,8 @@ def index():
         wksid = request.form.get('wksid')
         subid = request.form.get('subid')
         msg_text = request.form.get('text')
-        data, tpl_type = run(wksid, subid, msg_text)
+        dome_or_inter = request.form.get('select')
+        data, tpl_type = run(wksid, subid, msg_text, dome_or_inter)
         data[0] = '<div>匹配的最佳模版的id为:' + data[0] + '({})</div>'.format(tpl_type)
         data[1] = '<div>匹配的最佳模版内容为:' + data[1] + '</div>'
         data[2] = '<div>原始的输入文本内容为:' + data[2] + '</div>'
