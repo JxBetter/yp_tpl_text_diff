@@ -1,0 +1,8 @@
+uwsgi:
+        socket: 0.0.0.0:8001
+        chdir: /usr/local/yp_tpl_server/new_tpl_text_server/yp_tpl_text_diff-master
+        wsgi-file: /usr/local/yp_tpl_server/new_tpl_text_server/yp_tpl_text_diff-master/server.py
+        callable: app
+        processes: 8
+        thread: 4
+
